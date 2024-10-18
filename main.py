@@ -1,5 +1,4 @@
 # -- interno --
-from telegram.telegram import sendBroadcast
 from excecoes.excecoes import CampoEmBranco
 from session.sessioncontrol import with_session
 from gerenciadores.contas import cadastrar_usuario
@@ -43,13 +42,6 @@ def page_error_404(e: HTTPException) -> Response:
 @app.errorhandler(405)
 def page_error_405(e: HTTPException) -> Response:
     return redirect('/login')
-
-
-# Telegram webhook
-@app.route('/webhook', methods = ['POST'])
-def webhook():
-    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode('utf-8'))])
-    return '', 200
 
 
 @app.route('/')
@@ -107,7 +99,6 @@ async def registro() -> Response:
         if senha:
             # cadastrar
             await cadastrar_usuario(usuario, senha, email)
-            sendBroadcast(f'🟧 {usuario} acabou de se registrar! ({get_city_from_ip()}).')
             # Carregando usuário
             user = trazer_usuario(usuario)
             #logar
@@ -133,7 +124,6 @@ def login() -> Response:
         if user and bcrypt.check_password_hash(user.senha, senha):
             # logar
             login_user(user)
-            sendBroadcast(f'🟩 {usuario} acabou de fazer login no sistema ({get_city_from_ip()}).')
             return redirect(url_for('sistema'))
 
     return render_template('login.html')

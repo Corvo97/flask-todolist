@@ -28,7 +28,6 @@ PyYAML==6.0.2
 requests==2.32.3
 setuptools==70.0.0
 SQLAlchemy==2.0.30
-telebot==0.0.5
 typing_extensions==4.12.1
 urllib3==2.2.2
 virtualenv==20.27.0
