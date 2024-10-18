@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.7/dist/tailwind.min.css" rel="stylesheet">
+    <title>Login</title>
+</head>
+<body class="bg-gray-200">
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="max-w-sm w-full bg-white shadow-md rounded-lg overflow-hidden">
+            <div class="flex justify-center items-center bg-blue-500 py-4">
+                <!--<img src="../static/img/pomodoro.png" alt="Imagem" class="w-16 h-16 rounded-full border-4 border-white">-->
+                <img src="../static/img/todo_logo.png" alt="Imagem" class="w-32 h-32 rounded-full">
+            </div>
+            <div class="px-8 py-6">
+                <form action="#" method="post">
+                    <div class="mb-4">
+                        <label for="usuario" class="block text-gray-700 font-bold mb-2">Usuário</label>
+                        <input type="text" id="usuario" name="usuario" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-blue-700">
+                    </div>
+                    <div class="mb-4">
+                        <label for="senha" class="block text-gray-700 font-bold mb-2">Senha</label>
+                        <input type="password" id="senha" name="senha" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:border-blue-700">
+                    </div>
+                    <div class="mb-4">
+                        <a href="#" class="text-blue-500 hover:text-blue-700">Esqueci minha senha</a>
+                    </div>
+                    <div class="mb-4">
+                        <a href="{{ url_for('registro') }}" class="text-blue-500 hover:text-blue-700">Criar nova conta</a>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 rounded-md transition duration-300">Entrar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
