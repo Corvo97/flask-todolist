@@ -1,2 +1,3 @@
-**/__pycache__
-todolist
+db/todolist.db
+__pycache__/
+todolist/

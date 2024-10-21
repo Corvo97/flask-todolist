@@ -1,10 +1,11 @@
 # -- interno --
-from excecoes.excecoes import CampoEmBranco
-from session.sessioncontrol import with_session
-from gerenciadores.contas import cadastrar_usuario
-from utilitarios.localizacao import get_city_from_ip
-from gerenciadores.tarefas import adicionar_tarefa, deletar_tarefa
-from utilitarios.utilitarios import trazer_usuario, trazer_dono_tarefa, formatar_prazo, Usuario
+from db.db_tools import get_user
+from classes.user_class import User
+from session.session import with_session
+from controls.user_control import user_add
+from exceptions.exceptions import FieldCannotBeEmpty
+from controls.task_control import task_create, task_remove
+from utilities.utilities import get_task_owner, format_due_date
 
 # -- externo --
 import asyncio
@@ -20,7 +21,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 # Configurações do Flask
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
-app.config['SECRET_KEY'] = 'palavrasupersecreta'
+app.config['SECRET_KEY'] = 'palavramuitocomplexaequedevesermantidaemsegredo2025'
 app.permanent_session_lifetime = timedelta(seconds = 28800)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -30,8 +31,8 @@ login_manager_message_category = 'info'
 # Utilizado pelo sistema de login
 @login_manager.user_loader
 @with_session
-def carregar_usuario(session: Session, id: int) -> Optional[Usuario]:
-    return session.query(Usuario).options(joinedload(Usuario.tarefas)).filter_by(id = id).first()
+def load_user(session: Session, id: int) -> Optional[User]:
+    return session.query(User).options(joinedload(User.tasks)).filter_by(id = id).first()
 
 
 @app.errorhandler(404)
@@ -49,82 +50,81 @@ def index() -> Response:
     return render_template('index.html')
 
 
-@app.route('/sistema')
+@app.route('/system')
 @login_required
-def sistema() -> Response:
-    return render_template('sistema.html', user = current_user)
+def system() -> Response:
+    return render_template('system.html', user = current_user)
 
 
-@app.route('/nova_tarefa', methods = ['POST'])
+@app.route('/new_task', methods = ['POST'])
 @login_required
-def nova_tarefa() -> Response:
-    try:
-        titulo = request.form['titulo_tarefa']
-        descricao = request.form['descricao_tarefa']
-        data_prazo = request.form['prazo_data_tarefa']
-        horario_prazo = request.form['prazo_horario_tarefa']
+def new_task() -> Response:
+    #try:
+    title = request.form['task_title']
+    description = request.form['task_description']
+    due_date = request.form['task_due_date']
+    due_time = request.form['task_due_time']
 
-        # Verificar se os campos obrigatórios estão preenchidos
-        if not (titulo and descricao and data_prazo and horario_prazo):
-            raise CampoEmBranco
+    # Verificar se os campos obrigatórios estão preenchidos
+    if not (title and description and due_date and due_time):
+        raise FieldCannotBeEmpty
 
-        # Formatação do prazo
-        data_hora_prazo = formatar_prazo(data_prazo, horario_prazo)
+    # Formatação do prazo
+    date_time_due = format_due_date(due_date, due_time)
+    task_create(title, description, date_time_due, current_user.id)
+    return redirect('/system')
+    #except Exception as e:
 
-        adicionar_tarefa(titulo, descricao, data_hora_prazo, current_user.id)
-        return redirect('/sistema')
-    except Exception as e:
-
-        return render_template('erro.html', mensagem = str(e))
+        #return render_template('error.html', mensagem = str(e))
 
 
-@app.route('/remover_tarefa/<int:tarefa_id>', methods = ['GET', 'POST'])
+@app.route('/remove_task/<int:task_id>', methods = ['GET', 'POST'])
 @login_required
-def remover_tarefa(tarefa_id: int) -> Response:
-    if current_user.id == trazer_dono_tarefa(tarefa_id):
-        deletar_tarefa(tarefa_id)
-        return redirect('/sistema')
+def remove_task(task_id: int) -> Response:
+    if current_user.id == get_task_owner(task_id):
+        task_remove(task_id)
+        return redirect('/system')
 
 
-@app.route('/registro', methods = ['GET', 'POST'])
+@app.route('/register', methods = ['GET', 'POST'])
 async def registro() -> Response:
     if current_user.is_authenticated:
-        return redirect('/sistema')
+        return redirect('/system')
     if request.method == 'POST':
-        usuario = request.form['usuario']
+        user = request.form['user']
         email = request.form['email']
-        senha = request.form['senha'] if request.form['senha'] == request.form['repetir_senha'] else False
-        if not (usuario and email and senha):
-            raise CampoEmBranco
-        if senha:
+        password = request.form['password'] if request.form['password'] == request.form['repeat_password'] else False
+        if not (user and email and password):
+            raise FieldCannotBeEmpty
+        if password:
             # cadastrar
-            await cadastrar_usuario(usuario, senha, email)
+            await user_add(user.title(), password, email)
             # Carregando usuário
-            user = trazer_usuario(usuario)
+            user = get_user(email)
             #logar
             login_user(user)
-            return redirect(url_for('sistema'))
+            return redirect(url_for('system'))
 
         return render_template('index.html')
 
-    return render_template('registro.html')
+    return render_template('register.html')
 
 
 @app.route('/login', methods = ['GET', 'POST'])
 def login() -> Response:
     if current_user.is_authenticated:
-        return redirect('/sistema')
+        return redirect('/system')
     if request.method == 'POST':
-        usuario = request.form['usuario']
-        senha = request.form['senha']
+        email = request.form['email']
+        password = request.form['password']
 
         # Carregando usuário
-        user = trazer_usuario(usuario)
+        user = get_user(email)
 
-        if user and bcrypt.check_password_hash(user.senha, senha):
+        if user and bcrypt.check_password_hash(user.password, password):
             # logar
             login_user(user)
-            return redirect(url_for('sistema'))
+            return redirect(url_for('system'))
 
     return render_template('login.html')
 
